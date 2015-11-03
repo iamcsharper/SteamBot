@@ -1,5 +1,7 @@
 var async = require('async');
 
+var colors = require('colors');
+
 var fs = require('fs');
 var mkdirp = require('mkdirp');
 var path = require('path');
@@ -12,8 +14,6 @@ var getSteamAPIKey = require('steam-web-api-key');
 var SteamTradeOffers = require('steam-tradeoffers'); // change to 'steam-tradeoffers' if not running from the examples subdirectory
 
 var config = require('./cfg/bots.json');
-
-var admin = '76561198080998288'; // put your steamid here so the bot can send you trade offers
 
 function getSentryPath(botName) {
 	var sentryFileDir = './cache/sentries';
@@ -33,23 +33,23 @@ function getSHA1(bytes) {
 	return shasum.read();
 }
 
-async.forEach(config.Bots, function (bot, callback) {
+async.forEach(config.Bots, function (bot, botCallback) {
 	var steamClient = new Steam.SteamClient();
 	var steamUser = new Steam.SteamUser(steamClient);
 	var steamFriends = new Steam.SteamFriends(steamClient);
 	var steamWebLogOn = new SteamWebLogOn(steamClient, steamUser);
 	var offers = new SteamTradeOffers();
-	
+
 	var logOnOptions = {
 		account_name: bot.Username,
 		password: bot.Password
 	};
-	
+
 	var logPref = bot.Username + '> ';
 
 	steamClient.connect();
 	steamClient.on('connected', function () {
-		console.log(logPref + 'Подключились, аутентифицируемся...');
+		console.log(logPref + 'Подключились, ждём ответа...');
 
 		try {
 			// Пытаемся получить SHA-хеш нашего файла сентрика.
@@ -78,41 +78,48 @@ async.forEach(config.Bots, function (bot, callback) {
 	});
 
 
-	function offerItems() {
+	function offerItems(receiver) {
 		offers.loadMyInventory({
 			appId: 570,
 			contextId: 2
 		}, function (err, items) {
 			if (items) {
+				var availableItems = [];
+				
 				for (var i = 0; i < items.length; i++) {
 					if (items[i].tradable) {
-						offers.makeOffer({
-							partnerSteamId: admin,
-							itemsFromMe: [
-								{
-									appid: 570,
-									contextid: 2,
-									amount: 1,
-									assetid: items[i].id
-          					}
-        					],
-							itemsFromThem: [],
-							message: 'This is test'
-						}, function (err, response) {
-							if (err) {
-								throw err;
-							}
-							console.log(response);
+						availableItems.push({
+							appid: 570,
+							contextid: 2,
+							amount: 1,
+							assetid: items[i].id
 						});
 					}
 				}
+				
+				offers.makeOffer({
+					partnerSteamId: receiver,
+					itemsFromMe: availableItems,
+					itemsFromThem: [],
+					message: 'Kek'
+				}, function (err, response) {
+					if (!err) {
+						console.log(response);
+					} else {
+						// Всё же ошибка...
+						
+						var msg = err.message;
+						msg = msg.replace(/<br>/g, ' ');
+						console.error(logPref + 'Отправить вещу Создателю не удалось!!! Причина кроется где-то здесь: '.magenta + msg.red);
+					}
+				});
 			}
 		});
 	}
 
 	steamClient.on('logOnResponse', function (logonResp) {
 		if (logonResp.eresult === Steam.EResult.OK) {
-			console.log(logPref + 'Аутентифицировались');
+			console.log(logPref + 'Сервер ответил! Авторизовываемся');
 			steamFriends.setPersonaState(Steam.EPersonaState.Busy);
 			steamFriends.setPersonaName(config.BotPrefix + bot.BotName);
 
@@ -126,13 +133,17 @@ async.forEach(config.Bots, function (bot, callback) {
 						webCookie: newCookie,
 						APIKey: APIKey
 					}, function () {
-						offerItems();
+						console.log(logPref + 'Высылаем все вещи нашему дорогому администратору!');
+						
+						offerItems(config.AdminID);
 					});
+					
 				});
+				
+				console.log(logPref + 'Авторизовались!');
+				botCallback();
 			});
 		}
-		
-		callback();
 	});
 
 	steamClient.on('servers', function (servers) {
@@ -141,6 +152,44 @@ async.forEach(config.Bots, function (bot, callback) {
 
 	steamClient.on('error', function (error) {
 		console.log(error);
+	});
+
+	steamFriends.on('message', function (senderID, message, type) {
+		/** Types are:
+		 * Invalid: 0,
+		 * ChatMsg: 1,
+		 * Typing: 2,
+		 * InviteGame: 3,
+		 * Emote: 4,
+		 * LobbyGameStart: 5,
+		 * LeftConversation: 6,
+		 * Entered: 7,
+		 * WasKicked: 8,
+		 * WasBanned: 9,
+		 * Disconnected: 10,
+		 * HistoricalChat: 11,
+		 * Reserved1: 12,
+		 * Reserved2: 13,
+		 * LinkBlocked: 14
+		 **/
+
+		switch (type) {
+			default: console.log(type);
+			break;
+		case 1:
+				console.log(logPref + 'Пользователь ' + senderID + ' написал мне сообщение: "' + message + '"');
+			break;
+		case 2:
+				console.log(logPref + 'Пользователь ' + senderID + ' пишет мне сообщение...');
+			break;
+		case 6:
+				console.log(logPref + 'Пользователь ' + senderID + ' отказался мне писать :C');
+			break;
+		}
+	});
+
+	steamFriends.on('personaState', function (friend) {
+		
 	});
 }, function (err) {
 	console.log('Загрузка всех ботов завершена!');

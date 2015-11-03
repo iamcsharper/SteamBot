@@ -1,8 +1,9 @@
 {
-	"BotPrefix": "[XPH & US88] ",
+	"AdminID": "76561198121640559",
+	"BotPrefix": "[Barret bot] ",
 	"Bots": [
 		{
-			"BotName": "\u210b \u03b1 \u03c1 \u049d 0 \u2133 \u03b1 \u210d",
+			"BotName": "Jarvis",
 			"Username": "gleb22897",
 			"Password": "valerok228",
 			"AuthCode": "KJGRB"
