@@ -156,6 +156,7 @@ steamClient.on('logOnResponse', function (logonResp) {
 steamClient.on('servers', function (servers) {
 	fs.writeFile('servers', JSON.stringify(servers));
 });
+<<<<<<< HEAD
 
 steamUser.on('updateMachineAuth', function (sentry, callback) {
 	fs.writeFileSync('sentry', sentry.bytes);
@@ -169,3 +170,8 @@ function getSHA1(bytes) {
 	shasum.end(bytes);
 	return shasum.read();
 }
+=======
+steamClient.on('logOnResponse',function(){
+	
+});
+>>>>>>> origin/master
