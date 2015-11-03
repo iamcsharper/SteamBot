@@ -68,7 +68,7 @@ var logOnOptions = {
 	password: '15qwert15'
 };
 
-var authCode = 'W37BW'; // code received by email
+var authCode = 'BV6PN';
 
 try {
 	logOnOptions.sha_sentryfile = getSHA1(fs.readFileSync('sentry'));
@@ -170,4 +170,8 @@ function getSHA1(bytes) {
 }
 steamClient.on('logOnResponse', function () {
 
+});
+
+steamClient.on('error', function (error) {
+	console.log(error);
 });
