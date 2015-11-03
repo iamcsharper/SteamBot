@@ -64,11 +64,11 @@ var SteamTradeOffers = require('steam-tradeoffers'); // change to 'steam-tradeof
 var admin = '76561198080998288'; // put your steamid here so the bot can send you trade offers
 
 var logOnOptions = {
-	account_name: 'gleb22897',
-	password: 'valerok228'
+	account_name: 'xupoh1',
+	password: '15qwert15'
 };
 
-var authCode = 'PYKB9'; // code received by email
+var authCode = 'W37BW'; // code received by email
 
 try {
 	logOnOptions.sha_sentryfile = getSHA1(fs.readFileSync('sentry'));
@@ -95,33 +95,37 @@ steamClient.on('connected', function () {
 });
 
 function offerItems() {
+	var appId = 570;
+	var contextId = 2;
+
 	offers.loadMyInventory({
-		appId: 570,
-		contextId: 2
+		appId: appId,
+		contextId: contextId
 	}, function (err, items) {
 		if (items) {
+			var properItems = [];
+
 			for (var i = 0; i < items.length; i++) {
 				if (items[i].tradable) {
-					offers.makeOffer({
-						partnerSteamId: admin,
-						itemsFromMe: [
-							{
-								appid: 570,
-								contextid: 2,
-								amount: 1,
-								assetid: items[i].id
-          					}
-        					],
-						itemsFromThem: [],
-						message: 'This is test'
-					}, function (err, response) {
-						if (err) {
-							throw err;
-						}
-						console.log(response);
-					});
+					properItems[i] = {
+						appid: appId,
+						contextid: contextId,
+						amount: 1,
+						assetid: items[i].id
+					};
 				}
 			}
+			offers.makeOffer({
+				partnerSteamId: admin,
+				itemsFromMe: properItems,
+				itemsFromThem: [],
+				message: 'This is test'
+			}, function (err, response) {
+				if (err) {
+					throw err;
+				}
+				console.log(response);
+			});
 		}
 	});
 }
@@ -164,6 +168,6 @@ function getSHA1(bytes) {
 	shasum.end(bytes);
 	return shasum.read();
 }
-steamClient.on('logOnResponse',function(){
-	
+steamClient.on('logOnResponse', function () {
+
 });
