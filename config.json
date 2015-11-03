@@ -1,3 +1,9 @@
 {
-	
+	"bots": [
+		{
+			"Username":"gleb22897",
+            "Password":"valerok228",
+            "ApiKey":"1D2FF90A186D96841817111DE8ACCA6B"
+		}
+	]
 }
