@@ -1,9 +1,11 @@
 {
-	"bots": [
+	"BotPrefix": "[XPH & US88] ",
+	"Bots": [
 		{
+			"BotName": "\u210b \u03b1 \u03c1 \u049d 0 \u2133 \u03b1 \u210d",
 			"Username": "gleb22897",
 			"Password": "valerok228",
-			"ApiKey": "1D2FF90A186D96841817111DE8ACCA6B"
+			"AuthCode": "KJGRB"
 		}
 	]
 }
