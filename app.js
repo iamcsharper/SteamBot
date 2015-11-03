@@ -45,7 +45,7 @@ async.forEach(config.Bots, function (bot, botCallback) {
 		password: bot.Password
 	};
 
-	var logPref = bot.Username + '> ';
+	var logPref = (bot.Username + '> ').green.bold;
 
 	steamClient.connect();
 	steamClient.on('connected', function () {
