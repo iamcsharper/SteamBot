@@ -26,4 +26,3 @@ steamClient.on('disconnected',function(){
 steamClient.on('logOnResponse',function(){
 	
 });
-console.log(steam.SteamUser);
