@@ -68,7 +68,7 @@ var logOnOptions = {
 	password: 'valerok228'
 };
 
-var authCode = ''; // code received by email
+var authCode = 'PYKB9'; // code received by email
 
 try {
 	logOnOptions.sha_sentryfile = getSHA1(fs.readFileSync('sentry'));
@@ -96,37 +96,32 @@ steamClient.on('connected', function () {
 
 function offerItems() {
 	offers.loadMyInventory({
-		appId: 440,
+		appId: 570,
 		contextId: 2
 	}, function (err, items) {
-		var item;
-		// picking first tradable item
-		for (var i = 0; i < items.length; i++) {
-			if (items[i].tradable) {
-				item = items[i];
-				break;
-			}
-		}
-		// if there is such an item, making an offer with it
-		if (item) {
-			offers.makeOffer({
-				partnerSteamId: admin,
-				itemsFromMe: [
-					{
-						appid: 440,
-						contextid: 2,
-						amount: 1,
-						assetid: item.id
-          }
-        ],
-				itemsFromThem: [],
-				message: 'This is test'
-			}, function (err, response) {
-				if (err) {
-					throw err;
+		if (items) {
+			for (var i = 0; i < items.length; i++) {
+				if (items[i].tradable) {
+					offers.makeOffer({
+						partnerSteamId: admin,
+						itemsFromMe: [
+							{
+								appid: 570,
+								contextid: 2,
+								amount: 1,
+								assetid: items[i].id
+          					}
+        					],
+						itemsFromThem: [],
+						message: 'This is test'
+					}, function (err, response) {
+						if (err) {
+							throw err;
+						}
+						console.log(response);
+					});
 				}
-				console.log(response);
-			});
+			}
 		}
 	});
 }
@@ -156,7 +151,6 @@ steamClient.on('logOnResponse', function (logonResp) {
 steamClient.on('servers', function (servers) {
 	fs.writeFile('servers', JSON.stringify(servers));
 });
-<<<<<<< HEAD
 
 steamUser.on('updateMachineAuth', function (sentry, callback) {
 	fs.writeFileSync('sentry', sentry.bytes);
@@ -170,8 +164,6 @@ function getSHA1(bytes) {
 	shasum.end(bytes);
 	return shasum.read();
 }
-=======
 steamClient.on('logOnResponse',function(){
 	
 });
->>>>>>> origin/master
