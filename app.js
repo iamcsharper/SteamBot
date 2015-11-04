@@ -6,6 +6,8 @@ var path = require('path');
 var mysql = require('mysql');
 var crypto = require('crypto');
 var Steam = require('steam');
+var request = require('request');
+var cheerio = require('cheerio');
 var SteamWebLogOn = require('steam-weblogon');
 var getSteamAPIKey = require('steam-web-api-key');
 var SteamTradeOffers = require('steam-tradeoffers'); // change to 'steam-tradeoffers' if not running from the examples subdirectory
@@ -255,17 +257,34 @@ async.forEach(config.Bots, function (bot, botCallback) {
 			default: console.log(type);
 			break;
 		case 1:
+				console.log(logPref + 'Пользователь ' + senderID + ' написал: "' + message + '"');
 
-				var phrases = [
+			var phrases = [
+				{
+					pattern: /го (?:мем|мемчик|мемас|мемы|кек)/i,
+					response: function (sender) {
+
+						request('http://1001mem.ru/new', function (err, res, body) {
+							if (!err) {
+								$ = cheerio.load(body);
+								$('.posts article').each(function () {
+									sender(senderID, $('img', this).attr('src'));
+								});
+							}
+						});
+
+						sender(senderID, 'ща скину, погодь...');
+					}
+				},
 				{
 					pattern: /ч(?:ё|е) там с (?:друзьями|другами)/i,
-					response: function () {
+					response: function (sender) {
 						var count = Object.keys(friendsInfo).length;
 
 						var str = 'Всего: ' + count + ' доступных друзей, включая меня. Поимённо: ' + "\n";
 
 						for (var index in friendsInfo) {
-							if (friendsInfo[index].steam_id == steamClient.steamID) {
+							if (friendsInfo[index].steam_id == steamClient.steamID.toString()) {
 								str += friendsInfo[index].name + ' - я любимый ^_^' + "\n";
 							} else str += friendsInfo[index].name + ', ';
 						}
@@ -274,9 +293,10 @@ async.forEach(config.Bots, function (bot, botCallback) {
 					}
 				},
 				{
-					pattern: /(привет|здравствуй|здравствуйте|ку|прив)(?:,| |, )(.*)/i,
-					response: function (input, lastCount, who) {
-						who = who.replace(/( )*/, '');
+					pattern: /(привет|здравствуй|здравствуйте|ку|прив|хай)(?:,| |, )(.*)/i,
+					response: function (sender, input, lastCount, greeting, who) {
+						who = who.replace(/^\s+|\s+$/g, '');
+						who = who.replace(/ /, '');
 
 						var msgs = ['И тебе, ' + senderID, 'Угу', 'Ну что ещё?'];
 						var good = ['няша', 'ня', 'бро', 'братан', 'брат', 'бот']
@@ -288,18 +308,24 @@ async.forEach(config.Bots, function (bot, botCallback) {
 							msgs = [':3 доброго времени суток! C:', 'И тебе, йоу! ^_^', 'Ихих;3 Приветик'];
 						}
 
-						if (lastCount) {
-							for (var i = 0; i < 10; ++i) {
-								msgs.push('Сколько можно писать об одном и том же? Уже ' + lastCount + ' раз меня приветствуешь, какой ужас!');
+						if (lastCount > 5) {
+							var chance = Math.ceil(lastCount / 1.75) + 2;
+							for (var i = 0; i < chance; ++i) {
+								if (i <= chance / 2)
+									msgs.push('Сколько можно писать об одном и том же? Уже ' + lastCount + ' раз меня приветствуешь, какой ужас!');
+								else
+									msgs.push(lastCount + ' раз меня вы не то приветствуете, не то обижаете, перестаньте!');
 							}
 						}
+
+						console.log(logPref + 'Теперь я ' + who);
 
 						return msgs[randomInt(0, msgs.length)];
 					}
 				},
 				{
-					pattern: /привет$/i,
-					response: function (input, lastCount, who) {
+					pattern: /(привет|здравствуй|здравствуйте|ку|прив|хай)$/i,
+					response: function (sender, input, lastCount, greeting) {
 						var msgs = ['И тебе привет, ' + senderID, 'Угу, привет', 'Ну что ещё?', 'Ага', 'Ну'];
 
 						return msgs[randomInt(0, msgs.length)];
@@ -313,7 +339,6 @@ async.forEach(config.Bots, function (bot, botCallback) {
 				if (match) {
 					var params = phrase.pattern.exec(message);
 					params.splice(0, 1);
-					console.log(params);
 
 					// Если последняя итерация годная и текущая такая же
 					if (lastPhrase == phrases.indexOf(phrase)) {
@@ -323,16 +348,16 @@ async.forEach(config.Bots, function (bot, botCallback) {
 					}
 
 					lastPhrase = phrases.indexOf(phrase);
-					params.unshift(message, lastCount);
+					var sender = function (receiver, message) {
+						steamFriends.sendMessage(receiver, message);
+					}
+
+					params.unshift(sender, message, lastCount);
 
 					delete params['input'];
 					delete params['index'];
 
-					var res = phrase.response.apply(null, params);
-
-					steamFriends.sendMessage(senderID, res);
-
-					console.log(logPref + 'Пользователь ' + senderID + ' написал: "' + message + '"');
+					phrase.response.apply(null, params);
 
 					nextPhrase({
 						end: true
