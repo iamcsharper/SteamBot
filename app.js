@@ -187,6 +187,10 @@ async.forEach(config.Bots, function (bot, botCallback) {
 			break;
 		}
 	});
+	
+	steamTrade.on('tradeProposed',function(id,who_id){
+	console.log(id,who_id);
+});
 
 	steamFriends.on('personaState', function (friend) {
 		
