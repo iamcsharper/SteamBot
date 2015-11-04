@@ -173,7 +173,7 @@ async.forEach(config.Bots, function (bot, botCallback) {
 
 				});
 
-				console.log(logPref + 'Авторизовались!');
+				console.log(logPref + 'Авторизовались! Грузим друзей...');
 
 				var keys = [];
 				var result = {};
@@ -200,20 +200,22 @@ async.forEach(config.Bots, function (bot, botCallback) {
 
 					nextFriend();
 				}, function (err) {
-					console.log(keys);
-				});
+					steamFriends.requestFriendData(keys);
 
-				botUse.push({
-					client: steamClient,
-					user: steamUser,
-					trade: steamTrade,
-					offers: offers,
-					friends: steamFriends,
-					botName: bot.Username
-				});
+					console.log(logPref + 'Загрузили');
 
-				// Переходим к загрузке следующего бота либо при удачной авторизации...
-				botCallback();
+					botUse.push({
+						client: steamClient,
+						user: steamUser,
+						trade: steamTrade,
+						offers: offers,
+						friends: steamFriends,
+						botName: bot.Username
+					});
+
+					// Переходим к загрузке следующего бота либо при удачной авторизации...
+					botCallback();
+				});
 			});
 			// ...либо при отсутствии подключения
 		} else botCallback();
@@ -258,11 +260,21 @@ async.forEach(config.Bots, function (bot, botCallback) {
 				{
 					pattern: /ч(?:ё|е) там с (?:друзьями|другами)/i,
 					response: function () {
-						return util.inspect(friendsInfo);
+						var count = Object.keys(friendsInfo).length;
+
+						var str = 'Всего: ' + count + ' доступных друзей, включая меня. Поимённо: ' + "\n";
+
+						for (var index in friendsInfo) {
+							if (friendsInfo[index].steam_id == steamClient.steamID) {
+								str += friendsInfo[index].name + ' - я любимый ^_^' + "\n";
+							} else str += friendsInfo[index].name + ', ';
+						}
+
+						return str;
 					}
 				},
 				{
-					pattern: /^привет(?:,| |, )(.*)/i,
+					pattern: /(привет|здравствуй|здравствуйте|ку|прив)(?:,| |, )(.*)/i,
 					response: function (input, lastCount, who) {
 						who = who.replace(/( )*/, '');
 
@@ -276,13 +288,19 @@ async.forEach(config.Bots, function (bot, botCallback) {
 							msgs = [':3 доброго времени суток! C:', 'И тебе, йоу! ^_^', 'Ихих;3 Приветик'];
 						}
 
-						return msgs[randomInt(0, msgs.length)] + '(' + lastCount + ')';
+						if (lastCount) {
+							for (var i = 0; i < 10; ++i) {
+								msgs.push('Сколько можно писать об одном и том же? Уже ' + lastCount + ' раз меня приветствуешь, какой ужас!');
+							}
+						}
+
+						return msgs[randomInt(0, msgs.length)];
 					}
 				},
 				{
 					pattern: /привет$/i,
 					response: function (input, lastCount, who) {
-						var msgs = ['И тебе, ' + senderID, 'Угу', 'Ну что ещё?', 'Угу', 'Ага', 'Ну'];
+						var msgs = ['И тебе привет, ' + senderID, 'Угу, привет', 'Ну что ещё?', 'Ага', 'Ну'];
 
 						return msgs[randomInt(0, msgs.length)];
 					}
@@ -294,16 +312,18 @@ async.forEach(config.Bots, function (bot, botCallback) {
 
 				if (match) {
 					var params = phrase.pattern.exec(message);
+					params.splice(0, 1);
+					console.log(params);
 
 					// Если последняя итерация годная и текущая такая же
 					if (lastPhrase == phrases.indexOf(phrase)) {
 						++lastCount;
 					} else {
-						lastCount = parseInt('0');
+						lastCount = 0;
 					}
 
 					lastPhrase = phrases.indexOf(phrase);
-					params.unshift(params['input'], lastCount);
+					params.unshift(message, lastCount);
 
 					delete params['input'];
 					delete params['index'];
