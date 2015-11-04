@@ -250,11 +250,13 @@ async.forEach(config.Bots, function (bot, botCallback) {
 	async.forEach(botUse, function (data, closure) {
 		var client = data.client;
 		var botName = data.botName;
+		var sid = client.steamID.toString();
 
-		console.log(colors.green('Бот %s'), botName);
+		console.log(colors.green('Бот %s имеет айди %s'), botName, sid);
 
 		var steamFriends = new Steam.SteamFriends(client);
 
-		console.log(steamFriends);
+		// TODO: фикс
+		//console.log(steamFriends);
 	});
 });
