@@ -29,6 +29,10 @@ console.log(connectionData);
 
 var connection = mysql.createConnection(connectionData);
 
+function randomInt(low, high) {
+	return Math.floor(Math.random() * (high - low) + low);
+}
+
 function connectMysql() {
 	connection.connect(function (err) {
 		if (err) {
@@ -217,17 +221,21 @@ async.forEach(config.Bots, function (bot, botCallback) {
 		 * Reserved2: 13,
 		 * LinkBlocked: 14
 		 **/
-		var pattern = '/^Сасай$/i';
-		var match = message.match(pattern);
-		console.log(match);
-		if (match) {
-			steamFriends.sendMessage(senderID, 'Сам саси!', Steam.EChatEntryType.ChatMsg);
-		}
+
 		switch (type) {
 			default: console.log(type);
 			break;
 		case 1:
 				console.log(logPref + 'Пользователь ' + senderID + ' написал мне сообщение: "' + message + '"');
+
+			var msgs = ['Здравствуй, ' + senderID, 'Здарова', 'КЕК)0)0'];
+
+			var pattern = /^привет$/i;
+			var match = message.match(pattern);
+
+			if (match) {
+				steamFriends.sendMessage(senderID, msgs[randomInt(0, msgs.length)]);
+			}
 			break;
 		case 2:
 				console.log(logPref + 'Пользователь ' + senderID + ' пишет мне сообщение...');
