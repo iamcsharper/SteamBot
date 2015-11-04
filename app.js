@@ -15,7 +15,7 @@ var SteamWebLogOn = require('steam-weblogon');
 var getSteamAPIKey = require('steam-web-api-key');
 var SteamTradeOffers = require('steam-tradeoffers'); // change to 'steam-tradeoffers' if not running from the examples subdirectory
 
-var config = require('./cfg/bots.json');
+var config = require('./cfg/config.json');
 
 var connection = mysql.createConnection({
 	host: config.MysqlData.Host,
@@ -36,13 +36,17 @@ if (fs.existsSync('cfg/servers.json')) {
 	Steam.servers = JSON.parse(fs.readFileSync('cfg/servers.json'));
 }
 
-function getQueue(queueCallback) {
+function getConnect () {
 	connection.connect(function (err) {
 		if (err) {
 			throw (err);
 		}
+	});
+}
 
-		connection.query('SELECT * FROM `bot_queue`', queueCallback);
+function getQueue (steamid) {
+	connection.query('SELECT * FROM bot_queue WHERE steam_id=?','steamid',function(){
+		
 	});
 }
 
@@ -52,11 +56,14 @@ function getSHA1(bytes) {
 	return shasum.read();
 }
 
+var friendsInfo = [];
+
 async.forEach(config.Bots, function (bot, botCallback) {
 	var steamClient = new Steam.SteamClient();
 	var steamUser = new Steam.SteamUser(steamClient);
 	var steamFriends = new Steam.SteamFriends(steamClient);
 	var steamWebLogOn = new SteamWebLogOn(steamClient, steamUser);
+	var steamTrade = new Steam.SteamTrading(steamClient);
 	var offers = new SteamTradeOffers();
 
 	var logOnOptions = {
@@ -160,9 +167,15 @@ async.forEach(config.Bots, function (bot, botCallback) {
 				});
 
 				console.log(logPref + 'Авторизовались!');
+
+				/* Произвоим sql подлючение */
+				//getQueue(steamClient.);
+
+				
+
 				botCallback();
 			});
-		}
+		} else botCallback();
 	});
 
 	steamClient.on('servers', function (servers) {
@@ -212,7 +225,7 @@ async.forEach(config.Bots, function (bot, botCallback) {
 	});
 
 	steamFriends.on('personaState', function (friend) {
-
+		friendsInfo.push(friend);
 	});
 }, function (err) {
 	console.log('Загрузка всех ботов завершена!');
