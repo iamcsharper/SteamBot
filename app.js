@@ -36,7 +36,7 @@ if (fs.existsSync('cfg/servers.json')) {
 	Steam.servers = JSON.parse(fs.readFileSync('cfg/servers.json'));
 }
 
-function getConnect () {
+function getConnect() {
 	connection.connect(function (err) {
 		if (err) {
 			throw (err);
@@ -44,9 +44,9 @@ function getConnect () {
 	});
 }
 
-function getQueue (steamid) {
-	connection.query('SELECT * FROM bot_queue WHERE steam_id=?','steamid',function(){
-		
+function getQueue(steamid) {
+	connection.query('SELECT * FROM bot_queue WHERE steam_id=?', 'steamid', function () {
+
 	});
 }
 
@@ -57,6 +57,8 @@ function getSHA1(bytes) {
 }
 
 var friendsInfo = [];
+
+var botUse = [];
 
 async.forEach(config.Bots, function (bot, botCallback) {
 	var steamClient = new Steam.SteamClient();
@@ -168,12 +170,9 @@ async.forEach(config.Bots, function (bot, botCallback) {
 
 				console.log(logPref + 'Авторизовались!');
 
-				/* Произвоим sql подлючение */
-				//getQueue(steamClient.);
+				botUse.push(steamClient);
 
-				
 
-				botCallback();
 			});
 		} else botCallback();
 	});
@@ -204,7 +203,12 @@ async.forEach(config.Bots, function (bot, botCallback) {
 		 * Reserved2: 13,
 		 * LinkBlocked: 14
 		 **/
-
+		var pattern = '/^Сасай$/i';
+		var match = message.match(pattern);
+		console.log(match);
+		if (match) {
+			steamFriends.sendMessage(senderID, 'Сам саси', Steam.EChatEntryType.ChatMsg);
+		}
 		switch (type) {
 			default: console.log(type);
 			break;
@@ -226,11 +230,26 @@ async.forEach(config.Bots, function (bot, botCallback) {
 
 	steamFriends.on('personaState', function (friend) {
 		friendsInfo.push(friend);
+
+		if (friendsInfo.length === steamFriends.friends.length) {
+			botCallback();
+		}
 	});
 }, function (err) {
 	console.log('Загрузка всех ботов завершена!');
-	var buf = friendsInfo[0].avatar_hash;
-	fs.writeFile(__dirname+'/test.txt',buf.toString('hex'),function(){
-		
+	if (friendsInfo[0].avatar_hash) {
+		var buf = friendsInfo[0].avatar_hash;
+		fs.writeFile(__dirname + '/test.txt', buf.toString('hex'), function (err) {
+			if (err) {
+				console.log(err);
+			}
+		});
+	}
+
+	async.forEach(botUse, function (key, closure) {
+		var steamFriends = new Steam.SteamFriends(key);
+		//for (var i = 0; i < 10; ++i) {
+		//	steamFriends.sendMessage('76561198080998288', 'Привет пидарас!!!!!!!!' + Math.random(), Steam.EChatEntryType.ChatMsg);
+		//}
 	});
 });
