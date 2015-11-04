@@ -77,7 +77,7 @@ async.forEach(config.Bots, function (bot, botCallback) {
 
 	steamClient.connect();
 	steamClient.on('connected', function () {
-		console.log(logPref + 'Подключились, ждём ответа...');
+		console.log(logPref + 'Подключились, ждём ответа аутентификации...');
 
 		try {
 			// Пытаемся получить SHA-хеш нашего файла сентрика.
@@ -170,10 +170,15 @@ async.forEach(config.Bots, function (bot, botCallback) {
 
 				console.log(logPref + 'Авторизовались!');
 
-				botUse.push(steamClient);
+				botUse.push({
+					client: steamClient,
+					botName: bot.Username
+				});
 
-
+				// Переходим к загрузке следующего бота либо при удачной авторизации...
+				botCallback();
 			});
+			// ...либо при отсутствии подключения
 		} else botCallback();
 	});
 
@@ -207,7 +212,7 @@ async.forEach(config.Bots, function (bot, botCallback) {
 		var match = message.match(pattern);
 		console.log(match);
 		if (match) {
-			steamFriends.sendMessage(senderID, 'Сам саси', Steam.EChatEntryType.ChatMsg);
+			steamFriends.sendMessage(senderID, 'Сам саси!', Steam.EChatEntryType.ChatMsg);
 		}
 		switch (type) {
 			default: console.log(type);
@@ -230,14 +235,10 @@ async.forEach(config.Bots, function (bot, botCallback) {
 
 	steamFriends.on('personaState', function (friend) {
 		friendsInfo.push(friend);
-
-		if (friendsInfo.length === steamFriends.friends.length) {
-			botCallback();
-		}
 	});
 }, function (err) {
 	console.log('Загрузка всех ботов завершена!');
-	if (friendsInfo[0].avatar_hash) {
+	if (friendsInfo[0]) {
 		var buf = friendsInfo[0].avatar_hash;
 		fs.writeFile(__dirname + '/test.txt', buf.toString('hex'), function (err) {
 			if (err) {
@@ -246,10 +247,14 @@ async.forEach(config.Bots, function (bot, botCallback) {
 		});
 	}
 
-	async.forEach(botUse, function (key, closure) {
-		var steamFriends = new Steam.SteamFriends(key);
-		//for (var i = 0; i < 10; ++i) {
-		//	steamFriends.sendMessage('76561198080998288', 'Привет пидарас!!!!!!!!' + Math.random(), Steam.EChatEntryType.ChatMsg);
-		//}
+	async.forEach(botUse, function (data, closure) {
+		var client = data.client;
+		var botName = data.botName;
+
+		console.log(colors.green('Бот %s'), botName);
+
+		var steamFriends = new Steam.SteamFriends(client);
+
+		console.log(steamFriends);
 	});
 });
