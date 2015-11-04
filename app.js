@@ -17,12 +17,26 @@ var SteamTradeOffers = require('steam-tradeoffers'); // change to 'steam-tradeof
 
 var config = require('./cfg/config.json');
 
-var connection = mysql.createConnection({
+var connectionData = {
 	host: config.MysqlData.Host,
 	user: config.MysqlData.Username,
 	password: config.MysqlData.Password,
-	database: config.MysqlData.Name
-});
+	database: config.MysqlData.Name,
+	waitForConnection: true
+};
+
+console.log(connectionData);
+
+var connection = mysql.createConnection(connectionData);
+
+function connectMysql() {
+	connection.connect(function (err) {
+		if (err) {
+			console.log('System> '.cyan + 'Не могу подключиться к серверу MySQL'.magenta);
+			console.log(err);
+		}
+	});
+}
 
 function getSentryPath(botName) {
 	var sentryFileDir = './cache/sentries';
@@ -36,18 +50,9 @@ if (fs.existsSync('cfg/servers.json')) {
 	Steam.servers = JSON.parse(fs.readFileSync('cfg/servers.json'));
 }
 
-function getConnect() {
-	connection.connect(function (err) {
-		if (err) {
-			throw (err);
-		}
-	});
-}
-
-function getQueue(steamid) {
-	connection.query('SELECT * FROM bot_queue WHERE steam_id=?', 'steamid', function () {
-
-	});
+// manageRows(err, rows)
+function getQueue(steamid, manageRows) {
+	connection.query('SELECT * FROM bot_queue WHERE steam_id=?', [steamid], manageRows);
 }
 
 function getSHA1(bytes) {
@@ -172,6 +177,10 @@ async.forEach(config.Bots, function (bot, botCallback) {
 
 				botUse.push({
 					client: steamClient,
+					user: steamUser,
+					trade: steamTrade,
+					offers: offers,
+					friends: steamFriends,
 					botName: bot.Username
 				});
 
@@ -252,11 +261,23 @@ async.forEach(config.Bots, function (bot, botCallback) {
 		var botName = data.botName;
 		var sid = client.steamID.toString();
 
-		console.log(colors.green('Бот %s имеет айди %s'), botName, sid);
+		console.log(botName + ' has id ' + sid);
 
-		var steamFriends = new Steam.SteamFriends(client);
+		/** Пример вывода:
+		'steamid': statusID
+		
+		Где statusID принимает
+		  None: 0,
+		  Blocked: 1,
+		  RequestRecipient: 2,
+		  Friend: 3,
+		  RequestInitiator: 4,
+		  Ignored: 5,
+		  IgnoredFriend: 6,
+		  SuggestedFriend: 7,
+		  Max: 8
+	  	**/
 
-		// TODO: фикс
-		//console.log(steamFriends);
+		//console.log(data.friends.friends);
 	});
 });
