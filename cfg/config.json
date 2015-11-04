@@ -1,4 +1,10 @@
 {
+	"MysqlData": {
+		"Host": "93.177.43.87",
+		"Name": "barret",
+		"Username": "root",
+		"Password": ""
+	},
 	"AdminID": "76561198121640559",
 	"BotPrefix": "[Barret bot] ",
 	"Bots": [

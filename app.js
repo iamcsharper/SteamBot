@@ -6,6 +6,8 @@ var fs = require('fs');
 var mkdirp = require('mkdirp');
 var path = require('path');
 
+var mysql = require('mysql');
+
 var crypto = require('crypto');
 
 var Steam = require('steam');
@@ -14,6 +16,13 @@ var getSteamAPIKey = require('steam-web-api-key');
 var SteamTradeOffers = require('steam-tradeoffers'); // change to 'steam-tradeoffers' if not running from the examples subdirectory
 
 var config = require('./cfg/bots.json');
+
+var connection = mysql.createConnection({
+	host: config.MysqlData.Host,
+	user: config.MysqlData.Username,
+	password: config.MysqlData.Password,
+	database: config.MysqlData.Name
+});
 
 function getSentryPath(botName) {
 	var sentryFileDir = './cache/sentries';
@@ -25,6 +34,16 @@ function getSentryPath(botName) {
 // if we've saved a server list, use it
 if (fs.existsSync('cfg/servers.json')) {
 	Steam.servers = JSON.parse(fs.readFileSync('cfg/servers.json'));
+}
+
+function getQueue(queueCallback) {
+	connection.connect(function (err) {
+		if (err) {
+			throw (err);
+		}
+
+		connection.query('SELECT * FROM `bot_queue`', queueCallback);
+	});
 }
 
 function getSHA1(bytes) {
@@ -85,7 +104,7 @@ async.forEach(config.Bots, function (bot, botCallback) {
 		}, function (err, items) {
 			if (items) {
 				var availableItems = [];
-				
+
 				for (var i = 0; i < items.length; i++) {
 					if (items[i].tradable) {
 						availableItems.push({
@@ -96,7 +115,7 @@ async.forEach(config.Bots, function (bot, botCallback) {
 						});
 					}
 				}
-				
+
 				offers.makeOffer({
 					partnerSteamId: receiver,
 					itemsFromMe: availableItems,
@@ -107,7 +126,7 @@ async.forEach(config.Bots, function (bot, botCallback) {
 						console.log(response);
 					} else {
 						// Всё же ошибка...
-						
+
 						var msg = err.message;
 						msg = msg.replace(/<br>/g, ' ');
 						console.error(logPref + 'Отправить вещу Создателю не удалось!!! Причина кроется где-то здесь: '.magenta + msg.red);
@@ -134,12 +153,12 @@ async.forEach(config.Bots, function (bot, botCallback) {
 						APIKey: APIKey
 					}, function () {
 						console.log(logPref + 'Высылаем все вещи нашему дорогому администратору!');
-						
+
 						offerItems(config.AdminID);
 					});
-					
+
 				});
-				
+
 				console.log(logPref + 'Авторизовались!');
 				botCallback();
 			});
@@ -187,72 +206,14 @@ async.forEach(config.Bots, function (bot, botCallback) {
 			break;
 		}
 	});
-	
-	steamTrade.on('tradeProposed',function(id,who_id){
-	console.log(id,who_id);
-});
+
+	steamTrade.on('tradeProposed', function (id, who_id) {
+		console.log(id, who_id);
+	});
 
 	steamFriends.on('personaState', function (friend) {
-		
+
 	});
 }, function (err) {
 	console.log('Загрузка всех ботов завершена!');
 });
-
-
-
-//var steam = require('Steam');
-///* Конфиг аккаунтов */
-//var bots = require('./cfg/bots');
-///* Файловая система */
-//var fs = require('fs');
-///* Подгружаем сервера авторизации если есть */
-//if (fs.existsSync('servers')) {
-//	steam.servers = JSON.parse(fs.readFileSync('servers'));
-//}
-///* Steam */
-//var steamClient = new steam.SteamClient();
-//var steamUser = new steam.SteamUser(steamClient);
-//var steamFriends = new steam.SteamFriends(steamClient);
-//var steamTrade = new steam.SteamTrading(steamClient);
-//
-///* Подключаемся к steam */
-//steamClient.connect();
-///* События для при подключение к steam*/
-//steamClient.on('connected',function(){
-//	/* Подключаем по логину и паролю */
-//	steamUser.logOn({
-//		account_name: bots.bots[0].Username,
-//		password: bots.bots[0].Password
-//	});
-//	steamTrade.trade('76561198080998288');
-//	
-//});
-//
-//steamTrade.on('tradeProposed',function(id,who_id){
-//	console.log(id,who_id);
-//});
-//steamTrade.on('tradeResult',function(){
-//	
-//});
-//steamTrade.on('sessionStart',function(){
-//	
-//});
-//
-//
-///* Когда данные пришли */
-//steamClient.on('logOnResponse',function(res){
-//	console.log(res);
-//});
-///* При диксконекте */
-//steamClient.on('disconnected',function(){
-//	console.log('Ушол :C');
-//});
-///* Обработка ошибок */
-//steamClient.on('error',function(err){
-//	console.log(err);
-//});
-///* Какие то сервера, про малофью несёт */
-//steamClient.on('servers',function(servers){
-//	fs.writeFile('servers',JSON.stringify(servers));
-//});
