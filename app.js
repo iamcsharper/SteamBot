@@ -229,4 +229,8 @@ async.forEach(config.Bots, function (bot, botCallback) {
 	});
 }, function (err) {
 	console.log('Загрузка всех ботов завершена!');
+	var buf = friendsInfo[0].avatar_hash;
+	fs.writeFile(__dirname+'/test.txt',buf.toString('hex'),function(){
+		
+	});
 });
