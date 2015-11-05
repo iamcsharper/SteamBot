@@ -69,6 +69,7 @@ var botUse = [];
 async.forEach(config.Bots, function (bot, botCallback) {
 		var userMemes = [];
 		var userBye = [];
+		var userTyping = [];
 
 		var steamClient = new Steam.SteamClient();
 		var steamUser = new Steam.SteamUser(steamClient);
@@ -261,7 +262,10 @@ async.forEach(config.Bots, function (bot, botCallback) {
 			case 1:
 					console.log(logPref + 'Пользователь ' + senderID + ' написал: "' + message + '"');
 
-				var phrases = [{
+				userTyping[senderID] = false;
+
+				var phrases = [
+					{
 						pattern: /^го ([0-9]\d*) мем(?:ч|ас|)(?:ик|)(?:а|ов|)/i,
 						response: function (sender, repeats, num) {
 							num = parseInt(num);
@@ -395,8 +399,10 @@ async.forEach(config.Bots, function (bot, botCallback) {
 
 							async.forEachOf(friendsInfo, function (friend, friendid, nextFriend) {
 								if (friendid != senderID) {
-									sender(friendid, friendsInfo[senderID].name + ' просил передать тебе сообщение, держи:');
-									sender(friendid, '"' + msg + '"');
+									//									sender(friendid, friendsInfo[senderID].name + ' просил передать тебе сообщение, держи:');
+									//									sender(friendid, '"' + msg + '"');
+
+									sender(friendid, msg);
 								}
 
 								nextFriend();
@@ -466,11 +472,14 @@ async.forEach(config.Bots, function (bot, botCallback) {
 				break;
 			case 2:
 					console.log(logPref + 'Пользователь ' + senderID + ' пишет мне сообщение...');
+				userTyping[senderID] = true;
 				break;
 			case 6:
 					console.log(logPref + 'Пользователь ' + senderID + ' отказался мне писать :C');
 				steamFriends.sendMessage(senderID, 'Вот нахал! Ушёл и не попрощался. Ладно-ладно, иди давай...');
-				if (!userBye[senderID]) {
+
+				// Не попрощался но писал
+				if (!userBye[senderID] && userTyping[senderID]) {
 					userBye[senderID] = setInterval(function () {
 						steamFriends.sendMessage(senderID, 'Попрощайся!');
 					}, 20000); // Если юзер так и не попрощался спамим каждые 20 сек
