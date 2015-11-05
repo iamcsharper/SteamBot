@@ -472,18 +472,8 @@ async.forEach(config.Bots, function (bot, botCallback) {
 				break;
 			case 2:
 					console.log(logPref + 'Пользователь ' + senderID + ' пишет мне сообщение...');
-				userTyping[senderID] = true;
-				break;
 			case 6:
 					console.log(logPref + 'Пользователь ' + senderID + ' отказался мне писать :C');
-				steamFriends.sendMessage(senderID, 'Вот нахал! Ушёл и не попрощался. Ладно-ладно, иди давай...');
-
-				// Не попрощался но писал
-				if (!userBye[senderID] && userTyping[senderID]) {
-					userBye[senderID] = setInterval(function () {
-						steamFriends.sendMessage(senderID, 'Попрощайся!');
-					}, 20000); // Если юзер так и не попрощался спамим каждые 20 сек
-				}
 				break;
 			}
 		});
