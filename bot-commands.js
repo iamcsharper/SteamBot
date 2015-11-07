@@ -25,6 +25,7 @@ function BotCommands() {
 					assetid: data.itemId
 				};
 
+                               // DEBUG
 				for (var i = 0; i < 30; i++) {
 					if (items[i].tradable) {
 						console.log(items[i].id + ' - ' + items[i].name);
