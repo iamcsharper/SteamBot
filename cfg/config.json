@@ -1,6 +1,6 @@
 {
 	"MysqlData": {
-		"Host": "93.177.43.87",
+		"Host": "localhost",
 		"Name": "barret",
 		"Username": "root",
 		"Password": ""
@@ -9,10 +9,10 @@
 	"BotPrefix": "[Barret bot] ",
 	"Bots": [
 		{
-			"BotName": "Jarvis",
-			"Username": "gleb22897",
-			"Password": "valerok228",
-			"AuthCode": "KJGRB"
+			"BotName": "XuPoH",
+			"Username": "xupoh1",
+			"Password": "15qwert15",
+			"AuthCode": "8HHXG"
 		}
 	]
 }
