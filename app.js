@@ -35,7 +35,8 @@ function handleDisconnect() {
 
 	connection.connect(function (err) {
 		if (err) {
-			console.log('System> '.cyan + 'Не могу подключиться к серверу MySQL'.magenta, err);
+			/* Что за переменные ? */
+			console.log('System> ' + cyan + 'Не могу подключиться к серверу MySQL' + magenta, err);
 			setTimeout(handleDisconnect, 2000);
 		}
 	});
@@ -60,16 +61,15 @@ if (fs.existsSync('cfg/servers.json')) {
 	Steam.servers = JSON.parse(fs.readFileSync('cfg/servers.json'));
 }
 
-var friendsInfo = {};
-var botUse = [];
+var friendsInfo = {},
+	botUse = [];
 
 async.forEach(
 	config.Bots,
 	function (bot, botCallback) {
-		var userMemes = [];
-		var userTyping = [];
-
-		var queue = [];
+		var userMemes = [],
+			userTyping = [],
+			queue = [];
 
 		var steamClient = new Steam.SteamClient();
 		var steamUser = new Steam.SteamUser(steamClient);
@@ -86,6 +86,7 @@ async.forEach(
 		var logPref = (bot.Username + '> ').yellow.bold;
 
 		steamClient.connect();
+
 		steamClient.on('connected', function () {
 			console.log(logPref + 'Подключились, ждём ответа аутентификации...');
 
@@ -158,8 +159,8 @@ async.forEach(
 							});
 						});
 
-					var keys = [];
-					var result = {};
+					var keys = [],
+						result = {};
 
 					/**
 					None: 0,
@@ -213,8 +214,8 @@ async.forEach(
 			console.log(error);
 		});
 
-		var lastPhrase = -1;
-		var lastCount = 1;
+		var lastPhrase = -1,
+			lastCount = 1;
 
 		steamFriends.on('message', chatter.listener);
 
@@ -223,48 +224,47 @@ async.forEach(
 		});
 
 		steamFriends.on('personaState', function (friend) {
-			var avatar_buf = friend.avatar_hash;
-			var avatar_hash = avatar_buf.toString('hex');
+			var avatarBuf = friend.avatarHash;
+			var avatarHash = avatarBuf.toString('hex');
 
-			if (avatar_buf.toString().length == 0) {
-				avatar_hash = 'fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb'; // empty steam image, FIXED 15:42 MSC 04.11.2015
+			if (avatarBuf.toString().length == 0) {
+				avatarHash = 'fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb'; // empty steam image, FIXED 15:42 MSC 04.11.2015
 			}
 
-			var avatar_url = util.format('http://cdn.akamai.steamstatic.com/steamcommunity/public/images/avatars/80/%s_full.jpg', avatar_hash);
+			var avatarUrl = util.format('http://cdn.akamai.steamstatic.com/steamcommunity/public/images/avatars/80/%s_full.jpg', avatarHash);
 
-			var current = {
+			friendsInfo[friend.friendid] = {
 				steam_id: friend.friendid,
 				name: friend.player_name,
-				avatar: avatar_url
+				avatar: avatarUrl
 			};
-
-			friendsInfo[friend.friendid] = current;
 		});
 	},
 	function (err) {
 		console.log('****** Загрузка всех ботов завершена! ******'.green.bold);
 
 		async.forEach(botUse, function (data, closure) {
-			var client = data.client;
-			var botName = data.botName.toString();
+			var botName = data.botName.toString(),
+				friends = data.friends.friends,
+				client = data.client;
+
 			var sid = client.steamID.toString();
-			var friends = data.friends.friends;
 
 			console.log(botName.yellow.bold + ' имеет ID ' + sid);
 
 			/** Пример вывода:
-		'steamid': statusID
-		
-		Где statusID принимает
-		  None: 0,
-		  Blocked: 1,
-		  RequestRecipient: 2,
-		  Friend: 3,
-		  RequestInitiator: 4,
-		  Ignored: 5,
-		  IgnoredFriend: 6,
-		  SuggestedFriend: 7,
-		  Max: 8
-	  	**/
+			 'steamid': statusID
+			 
+			 Где statusID принимает
+			   None: 0,
+			   Blocked: 1,
+			   RequestRecipient: 2,
+			   Friend: 3,
+			   RequestInitiator: 4,
+			   Ignored: 5,
+			   IgnoredFriend: 6,
+			   SuggestedFriend: 7,
+			   Max: 8
+			 **/
 		});
 	});

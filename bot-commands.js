@@ -10,7 +10,7 @@ function BotCommands() {
 
 	this.on('send-item', function (data) {
 		console.log(data);
-		//TODO: убрать лишнее
+		//TODO: Убрать лишнее
 		return;
 
 		offers.loadMyInventory({
@@ -25,8 +25,10 @@ function BotCommands() {
 					assetid: data.itemId
 				};
 
-                               // DEBUG
-				for (var i = 0; i < 30; i++) {
+				/* DEBUG */
+				var i = items.length;
+
+				while (i--) {
 					if (items[i].tradable) {
 						console.log(items[i].id + ' - ' + items[i].name);
 					}

@@ -1,7 +1,7 @@
 var crypto = require('crypto');
 
-this.randomInt = function (low, high) {
-	return Math.floor(Math.random() * (high - low) + low);
+this.randomInt = function (min, max) {
+	return Math.floor(Math.random() * (max - min) + min);
 }
 
 this.getSentryPath = function (botName) {
@@ -13,7 +13,8 @@ this.getSentryPath = function (botName) {
 
 // manageRows(err, rows)
 this.getQueueQuery = function (connection, steamid) {
-	return connection.query('SELECT * FROM bot_queue WHERE steam_id=?', [steamid]);
+	/* Так немного быстрее */
+	return connection.query('SELECT command,arguments FROM bot_queue WHERE steam_id=?', [steamid]);
 }
 
 this.getSHA1 = function (bytes) {
