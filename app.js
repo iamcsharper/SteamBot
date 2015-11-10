@@ -35,8 +35,8 @@ function handleDisconnect() {
 
 	connection.connect(function (err) {
 		if (err) {
-			/* Что за переменные ? */
-			console.log('System> ' + cyan + 'Не могу подключиться к серверу MySQL' + magenta, err);
+			/* Расширение объекта String ну ок */
+			console.log('System> '.cyan + 'Не могу подключиться к серверу MySQL'.magenta, err);
 			setTimeout(handleDisconnect, 2000);
 		}
 	});
