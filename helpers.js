@@ -13,8 +13,8 @@ this.getSentryPath = function (botName) {
 
 // manageRows(err, rows)
 this.getQueueQuery = function (connection, steamid) {
-	/* Так немного быстрее */
-	return connection.query('SELECT command,arguments FROM bot_queue WHERE steam_id=?', [steamid]);
+	/* Нихуя ибо id нужен */
+	return connection.query('SELECT * FROM bot_queue WHERE steam_id=?', [steamid]);
 }
 
 this.getSHA1 = function (bytes) {
