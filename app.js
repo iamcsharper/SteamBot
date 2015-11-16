@@ -35,7 +35,6 @@ function handleDisconnect() {
 
 	connection.connect(function (err) {
 		if (err) {
-			/* Расширение объекта String ну ок */
 			console.log('System> '.cyan + 'Не могу подключиться к серверу MySQL'.magenta, err);
 			setTimeout(handleDisconnect, 2000);
 		}
@@ -45,6 +44,7 @@ function handleDisconnect() {
 		if (err.code === 'PROTOCOL_CONNECTION_LOST') {
 			handleDisconnect();
 		} else {
+			console.log(err.code);
 			throw err;
 		}
 	});
@@ -62,7 +62,7 @@ if (fs.existsSync('cfg/servers.json')) {
 }
 
 var friendsInfo = {},
-	botUse = [];
+	botUse = {};
 
 async.forEach(
 	config.Bots,
@@ -122,87 +122,93 @@ async.forEach(
 				steamFriends.setPersonaState(Steam.EPersonaState.Busy);
 				steamFriends.setPersonaName(config.BotPrefix + bot.BotName);
 
-				steamWebLogOn.webLogOn(function (sessionID, newCookie) {
-					console.log(logPref + 'Авторизовались! Грузим друзей и задания...');
+				if (botUse[steamClient.steamID]) {
+					botCallback();
+				} else {
+					steamWebLogOn.webLogOn(function (sessionID, newCookie) {
+						console.log(logPref + 'Авторизовались! Грузим друзей и задания...');
 
-					var query = helpers.getQueueQuery(connection, steamClient.steamID);
-					query
-						.on('error', function (err) {
-							console.log(logPref + 'Задания загрузить не удалось', err);
-						})
-						.on('fields', function (fields) {
+						var query = helpers.getQueueQuery(connection, steamClient.steamID);
+						query
+							.on('error', function (err) {
+								console.log(logPref + 'Задания загрузить не удалось', err);
+							})
+							.on('result', function (row) {
+								queue.push(row);
+								//helpers.getDeleteQuery(connection, row.id);
+								//TODO: Вернуть удаление строки после чтения
+							})
+							.on('end', function () {
+								console.log(logPref + 'Заданий на очереди: ' + queue.length);
 
-						})
-						.on('result', function (row) {
-							queue.push(row);
-							//helpers.getDeleteQuery(connection, row.id);
-							//TODO: Вернуть удаление строки после чтения
-						})
-						.on('end', function () {
-							console.log(logPref + 'Заданий на очереди: ' + queue.length);
-
-							getSteamAPIKey({
-								sessionID: sessionID,
-								webCookie: newCookie
-							}, function (err, APIKey) {
-								offers.setup({
+								getSteamAPIKey({
 									sessionID: sessionID,
-									webCookie: newCookie,
-									APIKey: APIKey
-								}, function () {
-									async.each(queue, function (task, nextTask) {
-										BotCommands.emit(task.command, JSON.parse(task.arguments));
+									webCookie: newCookie
+								}, function (err, APIKey) {
+									console.log(logPref + ' API key: ' + APIKey);
 
-										nextTask();
+									offers.setup({
+										sessionID: sessionID,
+										webCookie: newCookie,
+										APIKey: APIKey
+									}, function () {
+										async.each(queue, function (task, nextTask) {
+											var obj = JSON.parse(task.arguments);
+											BotCommands.emit(task.command, offers, obj);
+
+											nextTask();
+										});
 									});
 								});
 							});
+
+						helpers.extractFriendsFromSteam(steamFriends.friends, function (err, keys, result) {
+							steamFriends.requestFriendData(keys);
+
+							console.log(logPref + 'Загрузили. Всего друзей: ' + Object.keys(result).length);
+
+							botUse[steamClient.steamID] = {
+								client: steamClient,
+								user: steamUser,
+								trade: steamTrade,
+								offers: offers,
+								friends: steamFriends,
+								botName: bot.Username
+							};
+
+							// Переходим к загрузке следующего бота либо при удачной авторизации...
+							botCallback();
 						});
-
-					var keys = [],
-						result = {};
-
-					/**
-					None: 0,
-					Blocked: 1,
-					RequestRecipient: 2,
-					Friend: 3,
-					RequestInitiator: 4,
-					Ignored: 5,
-					IgnoredFriend: 6,
-					SuggestedFriend: 7,
-					Max: 8
-					**/
-
-					var goodRelations = [Steam.EFriendRelationship.Friend];
-
-					async.forEach(Object.keys(steamFriends.friends), function (sid, nextFriend) {
-						if (!keys[sid] && goodRelations.indexOf(steamFriends.friends[sid]) != -1) {
-							result[sid] = steamFriends.friends[sid];
-							keys.push(sid);
-						}
-
-						nextFriend();
-					}, function (err) {
-						steamFriends.requestFriendData(keys);
-
-						console.log(logPref + 'Загрузили');
-
-						botUse.push({
-							client: steamClient,
-							user: steamUser,
-							trade: steamTrade,
-							offers: offers,
-							friends: steamFriends,
-							botName: bot.Username
-						});
-
-						// Переходим к загрузке следующего бота либо при удачной авторизации...
-						botCallback();
 					});
-				});
-				// ...либо при отсутствии подключения
-			} else botCallback();
+					// ...либо при отсутствии подключения	
+				}
+			} else {
+				// Чтобы предотвратить лишние вызовы
+				steamClient.disconnect();
+
+				console.log(logPref + 'Не могу аутентифицироваться!'.red.bold.italic);
+
+				for (var key in Steam.EResult) {
+					var val = Steam.EResult[key];
+					if (val == logonResp.eresult) {
+						logonResp.eresult = {
+							'code': val,
+							'message': key
+						};
+					}
+
+					if (val == logonResp.eresult_extended) {
+						logonResp.eresult_extended = {
+							'code': val,
+							'message': key
+						};
+					}
+				}
+
+				console.log(logonResp);
+
+				botCallback();
+			}
 		});
 
 		steamClient.on('servers', function (servers) {
@@ -210,7 +216,7 @@ async.forEach(
 		});
 
 		steamClient.on('error', function (error) {
-			console.log('У бота ошибка')
+			console.log(logPref + 'У меня ошибка:')
 			console.log(error);
 		});
 
@@ -224,7 +230,7 @@ async.forEach(
 		});
 
 		steamFriends.on('personaState', function (friend) {
-			var avatarBuf = friend.avatarHash;
+			var avatarBuf = friend.avatar_hash;
 			var avatarHash = avatarBuf.toString('hex');
 
 			if (avatarBuf.toString().length == 0) {
@@ -266,5 +272,7 @@ async.forEach(
 			   SuggestedFriend: 7,
 			   Max: 8
 			 **/
+
+			//console.log('Мои друзья: ', friendsInfo);
 		});
 	});
